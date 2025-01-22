@@ -47,7 +47,7 @@ json_editor.current_theme = 'Neptune' // Default theme, you can change that
 */
 
 json_editor.changeFont = (newFont) => {
-    json_editor.font= newFont
+    json_editor.font = newFont
     json_editor.reloadCSS()
 }
 
@@ -130,6 +130,8 @@ json_editor.createDictEditor = (dict) => {
         domKeyValue.classList.add('json-editor-div', `json-editor-${json_editor.orientations.keyval}-div`, 'json-editor-clickable', 'json-editor-key-value')
 
         json_editor.clickAction(domKeyValue, () => {
+            key = keyKeeper[0]
+
             let copyKey = key + ' - copy'
 
             dict[copyKey] = json_editor.deepCopy(dict[key])
@@ -137,6 +139,8 @@ json_editor.createDictEditor = (dict) => {
 
             json_editor.log('Cloned dict key-value element')
         }, () => {
+            key = keyKeeper[0]
+
             delete dict[key]
             domKeyValue.remove()
 
