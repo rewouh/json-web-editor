@@ -16,6 +16,8 @@ var json_editor = {}
 
 // ------------------- CONFIGURATIONS -------------------
 
+json_editor.debug = false // Enable/disable logs
+
 /*  Feel free to change the orientations to fit your needs, although the default configuration gives the best results in my opinion.
     If you are using very big dictionaries it would be pertinent to change the orientation of dict to 'column'.
 
@@ -58,6 +60,11 @@ json_editor.changeTheme = (newTheme) => {
 /* Only change the below code if you know what you're doing.
 */
 
+json_editor.log = (message) => {
+    if (json_editor.debug)
+        console.log(message)
+}
+
 json_editor.clickAction = (domElement, clickedFunc, controlClickedFunc) => {
     domElement.onclick = (e) => {
         e.stopPropagation() 
@@ -88,12 +95,12 @@ json_editor.createArrayEditor = (array) => {
             array.push(json_editor.deepCopy(obj))
             buildArrayElement(array[array.length - 1])
 
-            console.log('Cloned array element')
+            json_editor.log('Cloned array element')
         }, () => {
             array.splice(array.indexOf(obj), 1)
             built.remove()
 
-            console.log('Destroyed array element')
+            json_editor.log('Destroyed array element')
         })
 
         domArray.append(built)
@@ -128,12 +135,12 @@ json_editor.createDictEditor = (dict) => {
             dict[copyKey] = json_editor.deepCopy(dict[key])
             buildKeyValueElement(copyKey)
 
-            console.log('Cloned dict key-value element')
+            json_editor.log('Cloned dict key-value element')
         }, () => {
             delete dict[key]
             domKeyValue.remove()
 
-            console.log('Destroyed dict key-value element')
+            json_editor.log('Destroyed dict key-value element')
         })
 
         let domKey = json_editor.createDictKeyEditor(dict, keyKeeper)
@@ -176,30 +183,32 @@ json_editor.createTextInputEditor = (dictContainer, dictKeyKeeper, editKey, inpu
 
     domInput.addEventListener('keyup', () => {
         json_editor.resizeTextInput(domInput)
-    })
+    });
 
-    domInput.addEventListener('change', () => {
-        dictKey = dictKeyKeeper[0] // Updating key as it may have changed
+    ['change', 'blur'].forEach((event) => 
+        domInput.addEventListener(event, () => {
+            dictKey = dictKeyKeeper[0] // Updating key as it may have changed
 
-        let oldValue = editKey ? dictKey : dictContainer[dictKey]
-        let newValue = domInput.value
+            let oldValue = editKey ? dictKey : dictContainer[dictKey]
+            let newValue = domInput.value
 
-        newValue = inputUpdateFunc(oldValue, newValue)
-        domInput.value = newValue
+            newValue = inputUpdateFunc(oldValue, newValue)
+            domInput.value = newValue
 
-        if (editKey) {
-            dictContainer[newValue] = dictContainer[dictKey]
-            delete dictContainer[dictKey]
+            if (editKey) {
+                dictContainer[newValue] = dictContainer[dictKey]
+                delete dictContainer[dictKey]
 
-            console.log(`Renamed ${dictKey} to ${newValue}`)
+                json_editor.log(`Renamed ${dictKey} to ${newValue}`)
 
-            dictKeyKeeper[0] = newValue
+                dictKeyKeeper[0] = newValue
+            }
+            else {
+                dictContainer[dictKey] = newValue
+                json_editor.log(`Updated ${dictKey} to '${newValue}'`)
+            }
         }
-        else {
-            dictContainer[dictKey] = newValue
-            console.log(`Updated ${dictKey} to '${newValue}'`)
-        }
-    })
+    ))
 
     return domInput
 }
@@ -392,9 +401,8 @@ json_editor.reloadCSS = () => {
     document.getElementsByTagName('head')[0].append(json_editor.style)
 }
 
-/* Example :
-
-let example = { text: 'Hello World!' }
+/*
+let example = { first_text: 'Hello', second_text: 'World !' }
 
 json_editor.reloadCSS()
 
