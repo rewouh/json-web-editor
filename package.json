@@ -1,0 +1,23 @@
+{
+  "name": "json-web-editor",
+  "version": "1.0.0",
+  "description": "A modern web editor for JSON structures.",
+  "main": "json-web-editor.js",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rewouh/json-web-editor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rewouh/json-web-editor/issues"
+  },
+  "homepage": "https://github.com/rewouh/json-web-editor#readme",
+  "devDependencies": {
+    "rollup": "^4.31.0"
+  }
+}
