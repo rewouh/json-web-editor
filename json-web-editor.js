@@ -422,5 +422,3 @@ const json_web_editor = {
         document.getElementsByTagName('head')[0].append(this.internal.style)
     },
 }
-
-module.exports = json_web_editor
