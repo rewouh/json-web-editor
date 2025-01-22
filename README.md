@@ -1,6 +1,8 @@
 ## This js script defines a recursive modern-ui editor of JSON structures.
 
-<p align="center"><img src="https://github.com/rewouh/json-web-editor/blob/main/example.png?raw=true"/></p>
+<p align="center">
+  <img src="https://github.com/rewouh/json-web-editor/blob/main/example.png?raw=true"/>
+</p>
 
 ### How to ?
 
