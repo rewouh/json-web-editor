@@ -2,7 +2,7 @@
 
 ### How to ?
 
-First of all, download the script and import it in your web page. \
+First of all, download (or copy) the script and import it in your web page. \
 It exports a json_editor dictionary that contains everything.
 
 ### Then ?
