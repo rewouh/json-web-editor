@@ -51,4 +51,4 @@ There are a bunch of default themes pre-built in the script, you can add your ow
 You can also change the default font.
 
 Finally you may want to change the layout (display) of the editor, right now it is configured to handle big arrays of medium-sized dictionaries. \
-Let's say you want to handle a very big dictionary, then it would be smoother to change the orientations of the dicts to 'column' instead of 'row' (at the beginning of the script).
+Let's say you want to handle a very big dictionary, then it would be smoother to change the orientations of 'dict' to 'column' instead of 'row' (at the beginning of the script).
