@@ -6,12 +6,27 @@
 
 ### How to ?
 
-First of all, download (or copy) the script and import it in your web page. \
-It exports a json_editor dictionary that contains everything.
+There are two ways to install, either with npm or by hand.
+
+<strong>With npm:</strong>
+
+```sh
+npm install json-web-editor
+```
+
+You can then load the script in your web page with:
+
+```html
+<script src="node_modules/json-web-editor/json-web-editor.js"></script>
+```
+
+<strong>By hand:</strong>
+
+Download or copy the file `json-web-editor.js`, place it wherever you want and load the script.
+
+It exposes a json_editor dictionary that contains everything.
 
 ### Then ?
-
-TODO
 
 From another JS script, start by loading the CSS with : 
 
