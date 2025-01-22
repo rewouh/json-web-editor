@@ -11,6 +11,8 @@ It exports a json_editor dictionary that contains everything.
 
 ### Then ?
 
+TODO
+
 From another JS script, start by loading the CSS with : 
 
 ```js
