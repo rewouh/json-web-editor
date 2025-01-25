@@ -123,7 +123,7 @@ const json_web_editor = {
                 this.log('Destroyed array element')
             })
 
-            let cFunc = this.changeFuncFromType(typeof value)
+            let cFunc = this.changeFuncFromType(value)
             let domArrayElement = cFunc !== null ? this.createArrayTextEditor(array, indexKeeper, cFunc) : this._createEditor(value)
 
             domWrapper.append(domArrayElement)

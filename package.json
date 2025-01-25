@@ -1,6 +1,6 @@
 {
   "name": "json-web-editor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A modern web editor for JSON structures.",
   "main": "json-web-editor.js",
   "repository": {
