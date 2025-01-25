@@ -16,7 +16,7 @@ const json_web_editor = {
     // ------------------- CONFIGURATIONS -------------------
 
     config: {
-        debug: false, // Enable/disable logs
+        debug: true, // Enable/disable logs
 
         /*  Feel free to change the orientations to fit your needs, although the default configuration gives the best results in my opinion.
             If you are using very big dictionaries it would be pertinent to change the orientation of dict to 'column'.
@@ -93,27 +93,45 @@ const json_web_editor = {
         let domArray = document.createElement('div')
         domArray.classList.add('json-editor-div', `json-editor-${this.config.orientations.array}-div`, 'json-editor-array')
     
-        let buildArrayElement = (obj) => {
-            let built = this._createEditor(obj)
-            built.classList.add('json-editor-clickable')
-    
-            this.clickAction(built, () => {
-                array.push(this.deepCopy(obj))
-                buildArrayElement(array[array.length - 1])
+        let arrayIndexesKeepers = []
+
+        let buildArrayElement = (value, index) => {
+            let domWrapper = document.createElement('div')
+            domWrapper.classList.add('json-editor-div', `json-editor-row-div`, 'json-editor-clickable', 'json-editor-key-value')
+
+            let indexKeeper = [ index ]
+            arrayIndexesKeepers.push(indexKeeper)
+
+            this.clickAction(domWrapper, () => {
+                value = array[indexKeeper[0]]
+
+                array.push(this.deepCopy(value))
+                buildArrayElement(array[array.length - 1], array.length - 1)
     
                 this.log('Cloned array element')
             }, () => {
-                array.splice(array.indexOf(obj), 1)
-                built.remove()
+                let index = indexKeeper[0]
+
+                for (let i = index + 1; i < arrayIndexesKeepers.length; i++)
+                    arrayIndexesKeepers[i][0] -= 1
+
+                array.splice(index, 1)
+                arrayIndexesKeepers.splice(index, 1)
+
+                domWrapper.remove()
     
                 this.log('Destroyed array element')
             })
-    
-            domArray.append(built)
+
+            let cFunc = this.changeFuncFromType(typeof value)
+            let domArrayElement = cFunc !== null ? this.createArrayTextEditor(array, indexKeeper, cFunc) : this._createEditor(value)
+
+            domWrapper.append(domArrayElement)
+            domArray.append(domWrapper)
         }
     
-        for (let obj of array)
-            buildArrayElement(obj)
+        for (let i = 0; i < array.length; i++)
+            buildArrayElement(array[i], i)
     
         return domArray
     },
@@ -137,13 +155,7 @@ const json_web_editor = {
             domKeyValue.classList.add('json-editor-div', `json-editor-${this.config.orientations.keyval}-div`, 'json-editor-clickable', 'json-editor-key-value')
 
             this.clickAction(domKeyValue, () => {
-                console.log('old key ' + key)
-
                 key = keyKeeper[0]
-
-                console.log('new key ' + key)
-
-                console.log(dict)
 
                 let copyKey = key + ' - copy'
 
@@ -160,19 +172,11 @@ const json_web_editor = {
                 this.log('Destroyed dict key-value element')
             })
 
-            let domKey = this.createDictKeyEditor(dict, keyKeeper)
+            let domKey = this.createDictTextEditor(dict, keyKeeper, true, this.changeFuncs.string)
             domKey.classList.add('json-editor-key')
 
-            let domValue
-
-            if (typeof value == 'string')
-                domValue = this.createDictStringValueEditor(dict, keyKeeper)
-            else if (typeof value == 'number')
-                domValue = value % 1 === 0 ? this.createDictIntegerValueEditor(dict, keyKeeper) : this.createDictFloatValueEditor(dict, keyKeeper)
-            else if (typeof value == 'boolean')
-                domValue = this.createDictBooleanValueEditor(dict, keyKeeper)
-            else
-                domValue = this._createEditor(value)
+            let cFunc = this.changeFuncFromType(value)
+            let domValue = cFunc !== null ? this.createDictTextEditor(dict, keyKeeper, false, cFunc) : this._createEditor(value)
 
             domKeyValue.append(domKey, domValue)
             domDict.append(domKeyValue)
@@ -188,14 +192,77 @@ const json_web_editor = {
         domInput.style.width = `${domInput.value.length * 0.4}vw` 
     },
 
-    createTextInputEditor: function(dictContainer, dictKeyKeeper, editKey, inputUpdateFunc) {
+    arrayTextElementEditor : class {
+        constructor(instance, arrayContainer, indexKeeper, changeFunc) {
+            this.instance = instance
+            this.arrayContainer = arrayContainer
+            this.indexKeeper = indexKeeper
+            this.changeFunc = changeFunc
+        }
+
+        initial() {
+            return this.arrayContainer[this.indexKeeper[0]]
+        }
+
+        change(newValue) {
+            let index = this.indexKeeper[0]
+            let oldValue = this.arrayContainer[index]
+
+            newValue = this.changeFunc(oldValue, newValue)
+            this.arrayContainer[index] = newValue
+
+            this.instance.log(`Updated ${oldValue} to '${newValue}' in array`)
+
+            return newValue
+        }
+    },
+
+    dictTextElementEditor : class {
+        constructor(instance, dictContainer, dictKeyKeeper, editKey, changeFunc) {
+            this.instance = instance
+            this.dictContainer = dictContainer
+            this.dictKeyKeeper = dictKeyKeeper
+            this.editKey = editKey
+            this.changeFunc = changeFunc
+        }
+
+        initial() {
+            let dictKey = this.dictKeyKeeper[0]
+
+            return this.editKey ? dictKey : this.dictContainer[dictKey]
+        }
+
+        change(newValue) {
+            dictKey = this.dictKeyKeeper[0] // Updating key as it may have changed
+    
+            let oldValue = this.editKey ? dictKey : this.dictContainer[dictKey]
+
+            newValue = this.changeFunc(oldValue, newValue)
+
+            if (this.editKey) {
+                this.dictContainer[newValue] = this.dictContainer[dictKey]
+                delete this.dictContainer[dictKey]
+
+                this.instance.log(`Renamed ${dictKey} to ${newValue} in dictionary`)
+
+                this.dictKeyKeeper[0] = newValue
+            }
+            else {
+                this.dictContainer[dictKey] = newValue
+                
+                this.instance.log(`Updated ${dictKey} to '${newValue}' in dictionary`)
+            }
+
+            return newValue
+        }
+    },
+
+    createTextInputEditor: function(textElementEditor) {
         let domInput = document.createElement('input')
         domInput.classList.add('json-editor-input')
         domInput.type = 'text'
     
-        let dictKey = dictKeyKeeper[0]
-    
-        domInput.value = editKey ? dictKey : dictContainer[dictKey]
+        domInput.value = textElementEditor.initial()
         this.resizeTextInput(domInput)
     
         domInput.addEventListener('keyup', () => {
@@ -204,32 +271,53 @@ const json_web_editor = {
     
         ['change'].forEach((event) => 
             domInput.addEventListener(event, () => {
-                dictKey = dictKeyKeeper[0] // Updating key as it may have changed
-    
-                let oldValue = editKey ? dictKey : dictContainer[dictKey]
                 let newValue = domInput.value
-    
-                newValue = inputUpdateFunc(oldValue, newValue)
-                domInput.value = newValue
-    
-                if (editKey) {
-                    dictContainer[newValue] = dictContainer[dictKey]
-                    delete dictContainer[dictKey]
-    
-                    this.log(`Renamed ${dictKey} to ${newValue}`)
-    
-                    dictKeyKeeper[0] = newValue
-                }
-                else {
-                    dictContainer[dictKey] = newValue
-                    this.log(`Updated ${dictKey} to '${newValue}'`)
-                }
+
+                domInput.value = textElementEditor.change(newValue)
             }
         ))
     
         return domInput
     },
 
+    numberChangeFunc : (oldV, newV, parseFunc) => { 
+        try {
+            return parseFunc(newV)    
+        } catch (err) {
+            return oldV
+        }
+    },
+
+    changeFuncs : {
+        string: (oldV, newV) => newV,
+        integer:  (oldV, newV) => this.numberChangeFunc(oldV, newV, parseInt),
+        float: (oldV, newV) => this.numberChangeFunc(oldV, newV, parseFloat),
+        boolean : (oldV, newV) => newV == 'true',
+    },
+
+    changeFuncFromType(value) {
+        console.log(value)
+        console.log(typeof value)
+
+        if (typeof value == 'string')
+            return this.changeFuncs.string
+        else if (typeof value == 'number')
+            return value % 1 === 0 ? this.changeFuncs.integer : this.changeFuncs.float
+        else if (typeof value == 'boolean')
+            return this.changeFuncs.boolean
+
+        return null
+    },
+
+    createDictTextEditor(dictContainer, dictKeyKeeper, editKey, changeFunc) {
+        return this.createTextInputEditor(new this.dictTextElementEditor(this, dictContainer, dictKeyKeeper, editKey, changeFunc))
+    },
+
+    createArrayTextEditor(arrayContainer, indexKeeper, changeFunc) {
+        return this.createTextInputEditor(new this.arrayTextElementEditor(this, arrayContainer, indexKeeper, changeFunc))
+    },
+
+    /*
     createDictKeyEditor: function(dictContainer, dictKeyKeeper) {
         return this.createTextInputEditor(dictContainer, dictKeyKeeper, true, (oldV, newV) => newV)
     },
@@ -259,6 +347,7 @@ const json_web_editor = {
     createDictBooleanValueEditor: function(dictContainer, dictKeyKeeper) {
         return this.createTextInputEditor(dictContainer, dictKeyKeeper, false, (oldV, newV) => newV == 'true')
     },
+    */
 
     createEditorButton: function(text, clickFunc) {
         let domEditorButton = document.createElement('div')
